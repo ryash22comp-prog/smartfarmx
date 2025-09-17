@@ -16,15 +16,18 @@ from fastapi.staticfiles import StaticFiles
 try:
     from tensorflow.keras.models import load_model
     from tensorflow.keras.preprocessing import image
-    import numpy as np
 except Exception:
     load_model = None
     image = None
-    np = None
+
+# Use standalone NumPy for classical ML irrespective of TensorFlow availability
+import numpy as np
 
 import uvicorn
 import pandas as pd
 import pickle
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 
 # ---------------- configuration & logging ----------------
 logging.basicConfig(level=logging.INFO)
@@ -153,20 +156,61 @@ if load_model:
 else:
     logger.warning("TensorFlow/Keras not available in environment; image predictions disabled.")
 
-# Crop recommendation model (scikit-learn pickle)
+# Crop recommendation model (scikit-learn). Try load; if incompatible, train at runtime from CSV.
 CROP_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'RandomForest.pkl')
 crop_model = None
+crop_label_encoder = None
 crop_features = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+
+def train_crop_model_from_csv() -> None:
+    global crop_model, crop_label_encoder
+    source_csvs = [
+        os.path.join(BASE_DIR, 'Data-processed', 'crop_recommendation.csv'),
+        os.path.join(BASE_DIR, 'Data-raw', 'cpdata.csv')
+    ]
+    df = None
+    for p in source_csvs:
+        if os.path.exists(p):
+            try:
+                df = pd.read_csv(p)
+                if 'label' in df.columns:
+                    target_col = 'label'
+                elif 'crop' in df.columns:
+                    target_col = 'crop'
+                elif 'Crop' in df.columns:
+                    target_col = 'Crop'
+                else:
+                    continue
+                # Ensure required features exist
+                present = [c for c in crop_features if c in df.columns]
+                if len(present) < 3:
+                    continue
+                X = df[present].astype(float).values
+                y_raw = df[target_col].astype(str).values
+                enc = LabelEncoder()
+                y = enc.fit_transform(y_raw)
+                model = RandomForestClassifier(n_estimators=200, random_state=42)
+                model.fit(X, y)
+                crop_model = model
+                crop_label_encoder = enc
+                logger.info(f"Trained crop model from {p} using features: {present}")
+                return
+            except Exception as e:
+                logger.exception(f"Failed training crop model from {p}: {e}")
+    logger.warning("Could not train crop model from CSV; will use heuristic fallback.")
+
 try:
     if os.path.exists(CROP_MODEL_PATH):
         with open(CROP_MODEL_PATH, 'rb') as f:
             crop_model = pickle.load(f)
         logger.info(f"Loaded crop model from {CROP_MODEL_PATH}")
     else:
-        logger.warning(f"Crop model not found at {CROP_MODEL_PATH}; fallback heuristics will be used.")
+        logger.warning(f"Crop model not found at {CROP_MODEL_PATH}; attempting runtime training from CSV")
+        train_crop_model_from_csv()
 except Exception as e:
     logger.exception(f"Failed to load crop model: {e}")
-    crop_model = None
+    # Try to train from CSV if pickle incompatible
+    train_crop_model_from_csv()
 
 # Fertilizer reference CSV
 FERT_CSV = os.path.join(BASE_DIR, 'Data-processed', 'fertilizer.csv')
@@ -387,7 +431,12 @@ def crop_recommend(
     if crop_model is not None and all(v is not None for v in feature_values):
         try:
             X = np.array([feature_values], dtype=float)
-            pred = crop_model.predict(X)[0]
+            pred_idx = crop_model.predict(X)[0]
+            # Decode label if encoder available
+            if crop_label_encoder is not None:
+                pred = crop_label_encoder.inverse_transform([pred_idx])[0]
+            else:
+                pred = str(pred_idx)
             recommendation = {"recommended_crop": str(pred)}
         except Exception as e:
             logger.exception("Crop model prediction failed")

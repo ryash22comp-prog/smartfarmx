@@ -287,12 +287,20 @@ async def disease_detect(file: UploadFile = File(...), language: str = Form('en'
     with open(temp_path, 'wb') as f:
         f.write(contents)
 
-    # If model not available, return friendly error
+    # If model not available, return graceful response (no 500)
     if model is None:
-        # cleanup
         if os.path.exists(temp_path):
             os.remove(temp_path)
-        return JSONResponse({"error": "Image model not available on server."}, status_code=500)
+        return {
+            "ok": False,
+            "error": "Image model not available on server.",
+            "disease": None,
+            "probability": 0.0,
+            "description": "N/A",
+            "cause": "N/A",
+            "treatment": "N/A",
+            "prevention": "N/A"
+        }
 
     try:
         img = preprocess_image(temp_path)
@@ -311,7 +319,17 @@ async def disease_detect(file: UploadFile = File(...), language: str = Form('en'
         if os.path.exists(temp_path):
             os.remove(temp_path)
         logger.exception("Prediction failed")
-        return JSONResponse({"error": "Model prediction failed", "details": str(e)}, status_code=500)
+        return {
+            "ok": False,
+            "error": "Model prediction failed",
+            "details": str(e),
+            "disease": None,
+            "probability": 0.0,
+            "description": "N/A",
+            "cause": "N/A",
+            "treatment": "N/A",
+            "prevention": "N/A"
+        }
 
     # cleanup temp file
     if os.path.exists(temp_path):

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SmartFarmX</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="brand">SmartFarmX</div>
+    <ul class="tabs">
+      <li data-tab="dashboard" class="active">Analytics Dashboard</li>
+      <li data-tab="disease">Disease Detection</li>
+      <li data-tab="crop">Crop Recommendation</li>
+      <li data-tab="fertilizer">Fertilizer Suggestion</li>
+      <li data-tab="weather">Weather</li>
+      <li data-tab="knowledge">Knowledge Base</li>
+      <li data-tab="geolocation">Geolocation</li>
+    </ul>
+  </nav>
+
+  <!-- ANALYTICS DASHBOARD (was Dashboard) -->
+  <section id="dashboard" class="tab-page visible">
+    <div class="cards">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-services">0</div>
+        <div class="stat-label">Total Services Used</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-disease">0</div>
+        <div class="stat-label">Disease Diagnoses</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-crop">0</div>
+        <div class="stat-label">Crop Recommendations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-fertilizer">0</div>
+        <div class="stat-label">Fertilizer Suggestions</div>
+      </div>
+    </div>
+    <div class="filters">
+      <button data-range="7d" class="range-btn active">Last 7 Days</button>
+      <button data-range="30d" class="range-btn">Last 30 Days</button>
+      <button data-range="90d" class="range-btn">Last 90 Days</button>
+      <button id="refreshBtn">Refresh Data</button>
+    </div>
+    
+    <!-- Chatbot Widget -->
+    <div class="chatbot-widget">
+      <div class="chatbot-header">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMwMDdiZmYiLz4KPHBhdGggZD0iTTggMTJIMTZNNiAxNkgxOCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+" alt="Chatbot" class="chatbot-icon" />
+        <span>Agri Assistant</span>
+        <button id="chatbotToggle" class="chatbot-toggle">×</button>
+      </div>
+      <div class="chatbot-content" id="chatbotContent">
+        <div class="chatbot-messages" id="chatbotMessages">
+          <div class="chatbot-message bot">
+            <p>Hello! I'm your agricultural assistant. How can I help you today?</p>
+          </div>
+        </div>
+        <div class="chatbot-input">
+          <input type="text" id="chatbotInput" placeholder="Ask me anything about agriculture..." />
+          <button id="chatbotSend">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DISEASE -->
+  <section id="disease" class="tab-page">
+    <div class="center-container">
+        <div class="logo">Smart<span>farmX</span></div>
+      <div class="upload-card">
+            <form id="diseaseForm">
+          <input type="file" id="leafImage" accept="image/*" required />
+          <div class="inline">
+            <label>Language:
+              <select id="language">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="mr">Marathi</option>
+              </select>
+            </label>
+          </div>
+          <div id="previewBox" class="preview-box"></div>
+                <button class="detect-btn" type="submit">DETECT DISEASE</button>
+            </form>
+        </div>
+
+        <div class="result-section" id="diseaseResult"></div>
+    </div>
+  </section>
+
+  <!-- CROP -->
+  <section id="crop" class="tab-page">
+        <h2>Crop Recommendation</h2>
+    <form id="cropForm" class="card form-grid">
+      <label>Soil Type: <input type="text" name="soil_type" placeholder="e.g., loam"></label>
+      <label>Temperature (°C): <input type="number" name="temperature" step="0.1" placeholder="25"></label>
+      <label>Humidity (%): <input type="number" name="humidity" step="0.1" placeholder="60"></label>
+      <label>Rainfall (mm): <input type="number" name="rainfall" step="0.1" placeholder="200"></label>
+      <label>pH: <input type="number" step="0.01" name="ph" placeholder="6.5"></label>
+      <label>Season:
+        <select name="season">
+          <option value="kharif">Kharif</option>
+          <option value="rabi">Rabi</option>
+          <option value="zaid">Zaid</option>
+        </select>
+      </label>
+      <label>N: <input type="number" name="N" placeholder="50"></label>
+      <label>P: <input type="number" name="P" placeholder="50"></label>
+      <label>K: <input type="number" name="K" placeholder="50"></label>
+      <div class="form-actions">
+            <button type="submit">Recommend Crop</button>
+      </div>
+        </form>
+
+    <div class="result centered-result" id="cropResult"></div>
+  </section>
+
+  <!-- FERTILIZER -->
+  <section id="fertilizer" class="tab-page">
+        <h2>Fertilizer Suggestion</h2>
+    <form id="fertilizerForm" class="card form-grid">
+            <label>Crop Name: <input type="text" name="crop" required></label>
+            <label>N value: <input type="number" name="n" required></label>
+            <label>P value: <input type="number" name="p" required></label>
+            <label>K value: <input type="number" name="k" required></label>
+      <label>Season:
+        <select name="season">
+          <option value="kharif">Kharif</option>
+          <option value="rabi">Rabi</option>
+          <option value="zaid">Zaid</option>
+        </select>
+      </label>
+      <div class="form-actions">
+            <button type="submit">Suggest Fertilizer</button>
+      </div>
+        </form>
+
+    <div class="result centered-result" id="fertilizerResult"></div>
+  </section>
+
+  <!-- WEATHER -->
+  <section id="weather" class="tab-page">
+        <h2>Weather Forecast</h2>
+    <form id="weatherForm" class="card">
+            <label>Location: <input type="text" name="location" required></label>
+      <div class="form-actions">
+            <button type="submit">Get Weather</button>
+      </div>
+        </form>
+    <div class="result centered-result" id="weatherResult"></div>
+  </section>
+
+  <!-- KNOWLEDGE -->
+  <section id="knowledge" class="tab-page">
+    <h2>Agriculture News & Knowledge Base</h2>
+    
+    <!-- FAQ Search -->
+    <div class="card" style="grid-template-columns: 1fr;">
+      <input id="faqQuery" placeholder="Ask a question (e.g., How to capture a leaf photo?)" />
+      <button id="faqAsk">Ask</button>
+      <div id="faqAnswer" class="centered-result"></div>
+    </div>
+    
+    <!-- Agriculture News Tabs -->
+    <div class="news-tabs">
+      <div class="news-tab-header">
+        <button class="news-tab-btn active" data-news="latest">Latest News</button>
+        <button class="news-tab-btn" data-news="technology">Agri Technology</button>
+        <button class="news-tab-btn" data-news="market">Market Updates</button>
+        <button class="news-tab-btn" data-news="weather">Weather Alerts</button>
+      </div>
+      
+      <div class="news-content">
+        <div id="news-latest" class="news-tab-content active">
+          <div class="news-card">
+            <h3>Latest Agricultural News</h3>
+            <p>Stay updated with the latest developments in agriculture, farming techniques, and industry news.</p>
+            <div class="news-placeholder">Add your news API integration here</div>
+          </div>
+        </div>
+        
+        <div id="news-technology" class="news-tab-content">
+          <div class="news-card">
+            <h3>Agricultural Technology</h3>
+            <p>Discover the latest innovations in farming technology, smart agriculture, and digital farming solutions.</p>
+            <div class="news-placeholder">Add your tech news API integration here</div>
+          </div>
+        </div>
+        
+        <div id="news-market" class="news-tab-content">
+          <div class="news-card">
+            <h3>Market Updates</h3>
+            <p>Get real-time updates on crop prices, market trends, and agricultural commodity information.</p>
+            <div class="news-placeholder">Add your market data API integration here</div>
+          </div>
+        </div>
+        
+        <div id="news-weather" class="news-tab-content">
+          <div class="news-card">
+            <h3>Weather Alerts</h3>
+            <p>Important weather warnings, rainfall predictions, and climate updates for farmers.</p>
+            <div class="news-placeholder">Add your weather alerts API integration here</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+        <div id="faqSection"></div>
+  </section>
+
+  <!-- GEOLOCATION (replaces Analytics tab) -->
+  <section id="geolocation" class="tab-page">
+    <h2>Find Nearby Agri Services</h2>
+    <div class="card form-grid">
+      <label>Latitude: <input type="number" id="geoLat" step="0.000001" placeholder="e.g., 19.0760"></label>
+      <label>Longitude: <input type="number" id="geoLng" step="0.000001" placeholder="e.g., 72.8777"></label>
+      <div class="form-actions">
+        <button id="useLocationBtn" type="button">Use my location</button>
+      </div>
+
+      <div class="form-actions" style="grid-column:1 / -1;">
+        <button id="findPesticide" type="button">Find Pesticide Stores Nearby</button>
+        <button id="findDoctor" type="button">Find Plant Doctors Nearby</button>
+    </div>
+
+      <div id="geoLinks" style="grid-column:1 / -1;"></div>
+
+      <div id="mapPreview" style="grid-column:1 / -1;" class="map-preview"></div>
+    </div>
+  </section>
+
+    <script>
+        const API = 'http://localhost:8000/api';
+
+    // Tabs handling
+    const tabs = document.querySelectorAll('.tabs li');
+    const pages = document.querySelectorAll('.tab-page');
+    tabs.forEach(t => t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      pages.forEach(p => p.classList.remove('visible'));
+      document.getElementById(t.dataset.tab).classList.add('visible');
+    }));
+
+    // Image preview for disease
+    const leafImageInput = document.getElementById('leafImage');
+    if (leafImageInput) {
+      leafImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const previewBox = document.getElementById('previewBox');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    previewBox.innerHTML = `<img src="${evt.target.result}" alt="Leaf Preview">`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewBox.innerHTML = '';
+            }
+        });
+    }
+
+    // DISEASE detection - using language keys from backend result
+    const diseaseForm = document.getElementById('diseaseForm');
+    if (diseaseForm) {
+      diseaseForm.onsubmit = async (e) => {
+            e.preventDefault();
+        const fileEl = document.getElementById('leafImage');
+        if (!fileEl || fileEl.files.length === 0) {
+          alert('Please upload an image file.');
+          return;
+        }
+        const file = fileEl.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+        // send language selection to backend
+        const lang = (document.getElementById('language').value || 'en');
+        formData.append('language', lang);
+        
+        // Debug logging
+        console.log('Selected language:', lang);
+
+        try {
+            const res = await fetch(`${API}/disease-detect/`, { method: 'POST', body: formData });
+            const data = await res.json();
+
+          // backend already returns language-specific fields based on 'language' param (Description, Cause, etc.)
+          // if backend didn't return localized text, we still try to pick right key from data (fallback)
+          const desc = data.description || data.Description || '';
+          const cause = data.cause || data.Cause || '';
+          const treatment = data.treatment || data.Treatment || '';
+          const prevention = data.prevention || data.Prevention || '';
+
+            document.getElementById('diseaseResult').innerHTML = `
+            <div class="result-card info">
+              <div>
+                <div class="result-title">${data.disease} — ${(data.probability*100 || 0).toFixed(1)}%</div>
+                <div class="result-desc">${desc || 'No description available in selected language.'}</div>
+              </div>
+            </div>
+            <div class="result-card info"><div><div class="result-title">Cause</div><div class="result-desc">${cause || 'N/A'}</div></div></div>
+            <div class="result-card"><div><div class="result-title">Treatment</div><div class="result-desc">${treatment || 'N/A'}</div></div></div>
+            <div class="result-card"><div><div class="result-title">Prevention</div><div class="result-desc">${prevention || 'N/A'}</div></div></div>
+          `;
+        } catch (err) {
+          document.getElementById('diseaseResult').innerText = 'Error detecting disease. Is the backend running?';
+          console.error(err);
+        }
+      };
+    }
+
+    // CROP recommendation
+    const cropForm = document.getElementById('cropForm');
+    if (cropForm) {
+      cropForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+        try {
+            const res = await fetch(`${API}/crop-recommend/`, { method: 'POST', body: formData });
+            const data = await res.json();
+          document.getElementById('cropResult').innerHTML = `<div class="result-card"><div><div class="result-title">Recommended Crop</div><div class="result-desc">${data.recommended_crop || 'N/A'}</div></div></div>`;
+        } catch (err) {
+          document.getElementById('cropResult').innerText = 'Error getting recommendation.';
+          console.error(err);
+        }
+      };
+    }
+
+    // FERTILIZER suggestion - improved formatted output
+    const fertForm = document.getElementById('fertilizerForm');
+    if (fertForm) {
+      fertForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+        try {
+            const res = await fetch(`${API}/fertilizer-suggest/`, { method: 'POST', body: formData });
+            const data = await res.json();
+
+          // Build friendly formatted output
+          let html = `<div class="result-card"><div><div class="result-title">Fertilizer Recommendation</div><div class="result-desc">`;
+          html += `<strong>${data.fertilizer || 'Balanced NPK'}</strong><br/>`;
+
+          if (data.target && data.current && data.delta) {
+            // Format numbers and show plus sign for positive delta (means add)
+            const fmt = (v) => (typeof v === 'number' ? Math.round(v*100)/100 : v);
+            const sign = (v) => (v > 0 ? `+${fmt(v)}` : `${fmt(v)}`);
+
+            html += `<table class="npk-table">
+              <tr><th></th><th>Target (N/P/K)</th><th>Your (N/P/K)</th><th>Delta (add)</th></tr>
+              <tr>
+                <td></td>
+                <td>${fmt(data.target.N)}/${fmt(data.target.P)}/${fmt(data.target.K)}</td>
+                <td>${fmt(data.current.N)}/${fmt(data.current.P)}/${fmt(data.current.K)}</td>
+                <td>${sign(data.delta.N)}/${sign(data.delta.P)}/${sign(data.delta.K)}</td>
+              </tr>
+            </table>`;
+
+            // Guidance text
+            if (data.guidance) {
+              html += `<div style="margin-top:8px;"><small>${data.guidance}</small></div>`;
+            }
+          } else {
+            html += `<div>No reference data available for the given crop. Showing a balanced recommendation.</div>`;
+          }
+
+          html += `</div></div></div>`;
+
+          document.getElementById('fertilizerResult').innerHTML = html;
+        } catch (err) {
+          document.getElementById('fertilizerResult').innerText = 'Error getting fertilizer suggestion.';
+          console.error(err);
+        }
+      };
+    }
+
+    // WEATHER
+    const weatherForm = document.getElementById('weatherForm');
+    if (weatherForm) {
+      weatherForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const location = form.location.value;
+        try {
+            const res = await fetch(`${API}/weather/?location=${encodeURIComponent(location)}`);
+            const data = await res.json();
+          document.getElementById('weatherResult').innerHTML = `
+            <div class="result-card">
+              <div>
+                <div class="result-title">Weather for ${data.location}</div>
+                <div class="result-desc">
+                  <strong>${data.forecast}</strong> — ${data.temperature}°C<br/>
+                  Humidity: ${data.humidity}% | Wind: ${data.wind_speed} km/h<br/>
+                  ${data.description}<br/>
+                  <small style="color: #666;">${data.note}</small>
+                </div>
+              </div>
+            </div>`;
+        } catch (err) {
+          document.getElementById('weatherResult').innerText = 'Error fetching weather.';
+          console.error(err);
+        }
+      };
+    }
+
+    // FAQ small client search
+    document.getElementById('faqAsk').addEventListener('click', async () => {
+      const q = (document.getElementById('faqQuery').value || '').toLowerCase();
+      try {
+            const res = await fetch(`${API}/faq/`);
+            const data = await res.json();
+        let best = data.faq.find(([ques]) => ques.toLowerCase().includes(q));
+        document.getElementById('faqAnswer').innerText = best ? best[1] : 'No direct answer found. Try rephrasing your question.';
+      } catch (err) {
+        document.getElementById('faqAnswer').innerText = 'Error loading FAQ.';
+      }
+    });
+
+    // News tabs functionality
+    const newsTabBtns = document.querySelectorAll('.news-tab-btn');
+    const newsTabContents = document.querySelectorAll('.news-tab-content');
+    
+    newsTabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remove active class from all buttons and contents
+        newsTabBtns.forEach(b => b.classList.remove('active'));
+        newsTabContents.forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const targetContent = document.getElementById(`news-${btn.dataset.news}`);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+      });
+    });
+
+    // Chatbot functionality
+    const chatbotToggle = document.getElementById('chatbotToggle');
+    const chatbotContent = document.getElementById('chatbotContent');
+    const chatbotInput = document.getElementById('chatbotInput');
+    const chatbotSend = document.getElementById('chatbotSend');
+    const chatbotMessages = document.getElementById('chatbotMessages');
+    
+    let chatbotOpen = true;
+    
+    chatbotToggle.addEventListener('click', () => {
+      chatbotOpen = !chatbotOpen;
+      chatbotContent.style.display = chatbotOpen ? 'block' : 'none';
+      chatbotToggle.textContent = chatbotOpen ? '×' : '+';
+    });
+    
+    function addChatbotMessage(message, isBot = false) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `chatbot-message ${isBot ? 'bot' : 'user'}`;
+      messageDiv.innerHTML = `<p>${message}</p>`;
+      chatbotMessages.appendChild(messageDiv);
+      chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+    
+    chatbotSend.addEventListener('click', async () => {
+      const message = chatbotInput.value.trim();
+      if (!message) return;
+      
+      // Add user message
+      addChatbotMessage(message, false);
+      chatbotInput.value = '';
+      
+      try {
+        const formData = new FormData();
+        formData.append('message', message);
+        
+        const res = await fetch(`${API}/chatbot/`, { 
+          method: 'POST', 
+          body: formData 
+        });
+        const data = await res.json();
+        
+        // Add bot response
+        addChatbotMessage(data.response, true);
+      } catch (err) {
+        addChatbotMessage('Sorry, I encountered an error. Please try again.', true);
+      }
+    });
+    
+    chatbotInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        chatbotSend.click();
+      }
+    });
+
+    // DASHBOARD counters (analytics endpoint)
+    let currentRange = '7d';
+    async function updateDashboard() {
+      try {
+        const res = await fetch(`${API}/analytics/?range=${currentRange}`);
+            const data = await res.json();
+        const counts = { disease_detection: 0, crop_recommendation: 0, fertilizer_suggestion: 0 };
+        for (const [event, count] of data.by_event) {
+          counts[event] = count;
+        }
+        const total = (counts.disease_detection || 0) + (counts.crop_recommendation || 0) + (counts.fertilizer_suggestion || 0);
+        document.getElementById('stat-services').innerText = total;
+        document.getElementById('stat-disease').innerText = counts.disease_detection || 0;
+        document.getElementById('stat-crop').innerText = counts.crop_recommendation || 0;
+        document.getElementById('stat-fertilizer').innerText = counts.fertilizer_suggestion || 0;
+      } catch (err) {
+        console.error('Error updating dashboard', err);
+      }
+    }
+    document.querySelectorAll('.range-btn').forEach(btn => btn.addEventListener('click', () => {
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRange = btn.dataset.range;
+      updateDashboard();
+    }));
+    document.getElementById('refreshBtn').addEventListener('click', updateDashboard);
+    setInterval(updateDashboard, 5 * 60 * 1000);
+    updateDashboard();
+
+    // -------------------------
+    // GEOLOCATION feature code
+    // -------------------------
+    const useLocationBtn = document.getElementById('useLocationBtn');
+    const geoLat = document.getElementById('geoLat');
+    const geoLng = document.getElementById('geoLng');
+    const findPesticideBtn = document.getElementById('findPesticide');
+    const findDoctorBtn = document.getElementById('findDoctor');
+    const geoLinks = document.getElementById('geoLinks');
+    const mapPreview = document.getElementById('mapPreview');
+
+    if (useLocationBtn) {
+      useLocationBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          alert('Geolocation not available in this browser.');
+          return;
+        }
+        useLocationBtn.innerText = 'Getting location...';
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const lat = pos.coords.latitude.toFixed(6);
+          const lng = pos.coords.longitude.toFixed(6);
+          geoLat.value = lat;
+          geoLng.value = lng;
+          useLocationBtn.innerText = 'Use my location';
+          updateGeoPreview(lat, lng);
+        }, (err) => {
+          useLocationBtn.innerText = 'Use my location';
+          alert('Unable to get location: ' + (err.message || 'permission denied'));
+        }, { enableHighAccuracy: true });
+      });
+    }
+
+    function makeMapsSearchUrl(query, lat, lng) {
+      // Using the maps search url with a center coordinate to focus search near the user
+      // Example: https://www.google.com/maps/search/plant+doctor/@19.07,72.87,14z
+      return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${lat},${lng},14z`;
+    }
+    function updateGeoPreview(lat, lng) {
+      // embed preview map (works without API key using simple q param embed)
+      mapPreview.innerHTML = `<iframe width="100%" height="320" frameborder="0" style="border:0"
+        src="https://www.google.com/maps?q=${lat},${lng}&z=14&output=embed" allowfullscreen>
+        </iframe>`;
+      geoLinks.innerHTML = '';
+    }
+
+    function ensureCoords() {
+      const lat = parseFloat(geoLat.value);
+      const lng = parseFloat(geoLng.value);
+      if (!isFinite(lat) || !isFinite(lng)) {
+        alert('Please enter valid latitude and longitude, or click "Use my location".');
+        return null;
+      }
+      return { lat: lat.toFixed(6), lng: lng.toFixed(6) };
+    }
+
+    if (findPesticideBtn) {
+      findPesticideBtn.addEventListener('click', () => {
+        const coords = ensureCoords(); if (!coords) return;
+        const url = makeMapsSearchUrl('pesticide+store+near+me', coords.lat, coords.lng);
+        // show link + open in new tab
+        geoLinks.innerHTML = `<a href="${url}" target="_blank" rel="noopener">Open pesticide stores in Google Maps</a>`;
+        updateGeoPreview(coords.lat, coords.lng);
+        window.open(url, '_blank');
+      });
+    }
+    if (findDoctorBtn) {
+      findDoctorBtn.addEventListener('click', () => {
+        const coords = ensureCoords(); if (!coords) return;
+        const url = makeMapsSearchUrl('plant+doctor+near+me', coords.lat, coords.lng);
+        geoLinks.innerHTML = `<a href="${url}" target="_blank" rel="noopener">Open plant doctors in Google Maps</a>`;
+        updateGeoPreview(coords.lat, coords.lng);
+        window.open(url, '_blank');
+      });
+    }
+    </script>
+</body>
+</html>

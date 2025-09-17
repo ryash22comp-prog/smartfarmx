@@ -1,5 +1,6 @@
 # main.py
 import os
+import tempfile
 import json
 import sqlite3
 import logging
@@ -52,36 +53,86 @@ else:
     logger.warning(f"Frontend path not found (expected): {frontend_path}")
 
 # ---------------- SQLite analytics and FAQ ----------------
-DB_PATH = os.path.join(HERE, "smartfarmx.db")
+# Use a temp-local app data dir to avoid cloud sync locks (e.g., OneDrive)
+_db_base_dir = os.path.join(tempfile.gettempdir(), "smartfarmx")
+os.makedirs(_db_base_dir, exist_ok=True)
+DB_PATH = os.path.join(_db_base_dir, "smartfarmx.db")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     return conn
 
 def init_db():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS analytics (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        event TEXT,
-        details TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS faq (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        question TEXT,
-        answer TEXT
-    )''')
-    # Seed FAQ rows if empty
-    c.execute('SELECT COUNT(*) FROM faq')
-    if c.fetchone()[0] == 0:
+    """Initialize SQLite DB; if the file is corrupted (not a DB), recreate it safely."""
+    conn = None
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS analytics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event TEXT,
+            details TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS faq (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT,
+            answer TEXT
+        )''')
+        # Seed FAQ rows if empty
+        c.execute('SELECT COUNT(*) FROM faq')
+        if c.fetchone()[0] == 0:
+            c.executemany('INSERT INTO faq (question, answer) VALUES (?, ?)', [
+                ("How to use Disease Detection?", "Upload a clear leaf image and click Detect."),
+                ("What data do I need for Crop Recommendation?", "Soil type, temperature, rainfall and season."),
+                ("How often does Analytics refresh?", "Every 5 minutes by default on the dashboard.")
+            ])
+        conn.commit()
+        conn.close()
+        conn = None
+    except sqlite3.DatabaseError as e:
+        logger.error(f"Database error during init: {e}. Recreating database at {DB_PATH}.")
+        # Ensure connection is closed before modifying file on Windows
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+        # Remove or rename the corrupted file
+        try:
+            if os.path.exists(DB_PATH):
+                os.remove(DB_PATH)
+        except Exception as rm_err:
+            logger.warning(f"Failed to remove corrupted DB file: {rm_err}. Attempting rename to .bak")
+            try:
+                backup_path = DB_PATH + ".bak"
+                if os.path.exists(backup_path):
+                    os.remove(backup_path)
+                os.replace(DB_PATH, backup_path)
+            except Exception as rename_err:
+                logger.exception(f"Failed to rename corrupted DB file: {rename_err}")
+                raise
+        # Retry once after cleanup
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS analytics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event TEXT,
+            details TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS faq (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT,
+            answer TEXT
+        )''')
         c.executemany('INSERT INTO faq (question, answer) VALUES (?, ?)', [
             ("How to use Disease Detection?", "Upload a clear leaf image and click Detect."),
             ("What data do I need for Crop Recommendation?", "Soil type, temperature, rainfall and season."),
             ("How often does Analytics refresh?", "Every 5 minutes by default on the dashboard.")
         ])
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
 
 init_db()
 
@@ -201,6 +252,17 @@ def log_event(event: str, details: str = "") -> None:
 def root():
     # redirect to frontend mount
     return RedirectResponse(url="/app/")
+
+# quick health endpoint
+@app.get("/health")
+def health():
+    try:
+        conn = get_db()
+        conn.execute("SELECT 1")
+        conn.close()
+        return {"ok": True}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 # ---------------- test endpoint to verify disease JSON ----------------
 @app.get("/api/diseases/")
